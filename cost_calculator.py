@@ -38,3 +38,33 @@ def calculate_single_station_cost(distances, max_ranges):
     total_expected_cost = fixed_hardware_cost + expected_variable_cost
 
     return total_expected_cost
+
+def calculate_global_expected_cost(station_locations, allocations, robot_data):
+    """
+    Final calculate total cost for the entire settlement area
+    """
+    total_system_cost = 0.0
+
+    # Group the robots assigned to base stations by base station
+    station_groups = {s_id: [] for s_id in station_locations.keys()}
+    for r_id, s_id in allocations.items():
+        if s_id != -1 and s_id in station_groups:
+            station_groups[s_id].append(r_id)
+
+    for s_id, assigned_robots in station_groups.items():
+        if len(assigned_robots) == 0:
+            continue
+
+        sx, sy = station_locations[s_id]
+        station_coord = np.array([[sx, sy]])
+
+        group_data = robot_data.loc[assigned_robots]
+        group_coords = group_data[['longitude', 'latitude']].values
+        group_ranges = group_data['range'].values
+
+        dist_to_station = cdist(group_coords, station_coord).flatten()
+
+        station_cost = calculate_single_station_cost(dist_to_station, group_ranges)
+        total_system_cost += station_cost
+
+    return total_system_cost
