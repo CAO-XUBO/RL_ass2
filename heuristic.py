@@ -34,7 +34,6 @@ def assign_best_available_station(robot_id, station_locations, station_current_c
 
     return -1, None
 
-
 def run_greedy_construction(robot_data):
     """
     Greedy Website Construction Algorithm
