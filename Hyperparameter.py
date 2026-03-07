@@ -6,6 +6,8 @@ STATION_CHARGER_LIMIT = 8 # m
 # The maximum number of robots each charger can serve
 CHARGER_ROBOT_LIMIT = 2 # q
 
+CAPACITY_LIMIT = STATION_CHARGER_LIMIT * CHARGER_ROBOT_LIMIT
+
 # Build cost
 BUILD_COST = 5000 # c_b
 
