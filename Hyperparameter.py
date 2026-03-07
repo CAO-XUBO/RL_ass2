@@ -22,3 +22,5 @@ CHARGE_COST = 0.42 # c_c
 LAMBDA = 0.012
 R_MIN = 10
 R_MAX = 175
+
+# import this file using "from Hyperparameter import * "
