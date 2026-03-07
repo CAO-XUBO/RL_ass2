@@ -8,7 +8,8 @@ from cost_calculator import calculate_single_station_cost, calculate_global_expe
 
 def data_load(data_filepath):
     robot_data = pd.read_csv(data_filepath, index_col='index')
-    return robot_data
+    target_robot_data = robot_data[robot_data['subset'] == "high"]
+    return target_robot_data
 
 def assign_best_available_station(robot_id, station_locations, station_current_counts, robot_data):
     """
@@ -38,22 +39,21 @@ def run_greedy_construction(robot_data):
     """
     Greedy Website Construction Algorithm
     """
-
-    # Initialization
     station_locations = {}
     station_current_counts = {}
     allocations = {r_id: -1 for r_id in robot_data.index}
 
     unassigned_robots = list(robot_data.index)
     station_counter = 0
-    max_capacity = STATION_CHARGER_LIMIT * CHARGER_ROBOT_LIMIT
 
     print(f"Loaded {len(unassigned_robots)} robot data")
 
     while len(unassigned_robots) > 0:
-        best_savings = 0
+
+        best_cost_per_robot = float('inf')
         best_candidate_xy = None
         best_candidate_robots = []
+        best_station_cost = 0
 
         unassigned_data = robot_data.loc[unassigned_robots]
         coords = unassigned_data[['longitude', 'latitude']].values
@@ -62,15 +62,11 @@ def run_greedy_construction(robot_data):
 
         for i, seed_id in enumerate(ids):
             seed_coord = coords[i].reshape(1, 2)
-
-            # Distance from the seed to all other unassigned robots
             dist_to_seed = cdist(seed_coord, coords)[0]
 
-            valid_mask = dist_to_seed <= ranges
-            valid_indices = np.where(valid_mask)[0]
-
-            sorted_valid_indices = valid_indices[np.argsort(dist_to_seed[valid_indices])]
-            top_k_indices = sorted_valid_indices[:max_capacity]
+            # Circle the nearest robot
+            sorted_indices = np.argsort(dist_to_seed)
+            top_k_indices = sorted_indices[:CAPACITY_LIMIT]
 
             group_ids = ids[top_k_indices]
             group_coords = coords[top_k_indices]
@@ -86,18 +82,17 @@ def run_greedy_construction(robot_data):
 
             # Calculate the cost
             station_cost = calculate_single_station_cost(dist_to_center, group_ranges)
-            penalty_avoided = len(group_ids) * RESCUE_COST
-            savings = penalty_avoided - station_cost
 
-            # Record the maximum profit across the entire map
-            if savings > best_savings:
-                best_savings = savings
+            cost_per_robot = station_cost / len(group_ids)
+
+            # Greedy Log
+            if cost_per_robot < best_cost_per_robot:
+                best_cost_per_robot = cost_per_robot
                 best_candidate_xy = (center_x, center_y)
+                best_candidate_robots = group_ids
+                best_station_cost = station_cost
 
-                valid_final_mask = dist_to_center <= group_ranges
-                best_candidate_robots = group_ids[valid_final_mask][:max_capacity]
-
-        if best_savings > 0 and len(best_candidate_robots) > 0:
+        if len(best_candidate_robots) > 0:
             station_id = f"S_{station_counter}"
             station_locations[station_id] = best_candidate_xy
 
@@ -106,35 +101,18 @@ def run_greedy_construction(robot_data):
                 unassigned_robots.remove(r_id)
 
             station_current_counts[station_id] = len(best_candidate_robots)
-            print(f"Build {station_id}: location:(longitude:{best_candidate_xy[0]:.2f}, latitude:{best_candidate_xy[1]:.2f}), "
-                  f"Capacity {len(best_candidate_robots)}/16, Savings £{best_savings:.2f}")
+            print(f"Build {station_id}: Loc({best_candidate_xy[0]:.2f}, {best_candidate_xy[1]:.2f}), "
+                  f"Capacity {len(best_candidate_robots)}/16, Expected Cost £{best_station_cost:.2f}")
             station_counter += 1
         else:
-            print("Greedy search termination.")
             break
-
-    # Sweep Phase
-    print(f"Sweep {len(unassigned_robots)} robot.")
-    saved_in_sweep = 0
-    for r_id in unassigned_robots[:]:
-        s_id, dist = assign_best_available_station(r_id, station_locations, station_current_counts, robot_data)
-        if s_id != -1:
-            allocations[r_id] = s_id
-            station_current_counts[s_id] += 1
-            unassigned_robots.remove(r_id)
-            saved_in_sweep += 1
-
-
-    print(f"Total number of charging stations constructed: {len(station_locations)}")
-    print(f"Successful Charging Robot: {len(robot_data) - len(unassigned_robots)}")
-    print(f"The number of robot that must call for assistance: {len(unassigned_robots)}")
 
     return station_locations, allocations, station_current_counts
 
 
 if __name__ == '__main__':
 
-    data_path = "processed_data/robot_locations_range.csv"
+    data_path = "processed_data/robot_subsets.csv"
 
     out_dir = "results"
     stations_out_path = f"{out_dir}/stations_1b.csv"
