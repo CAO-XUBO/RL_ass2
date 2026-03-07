@@ -6,6 +6,7 @@ from scipy.spatial.distance import cdist
 from Hyperparameter import *
 from cost_calculator import calculate_single_station_cost
 
+
 def data_load(data_filepath):
     robot_data = pd.read_csv(data_filepath, index_col='index')
     return robot_data
