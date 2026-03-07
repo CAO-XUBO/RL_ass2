@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from scipy.spatial.distance import cdist
 from Hyperparameter import *
-from cost_calculator import calculate_single_station_cost
+from cost_calculator import calculate_single_station_cost, calculate_global_expected_cost
 
 def data_load(data_filepath):
     robot_data = pd.read_csv(data_filepath, index_col='index')
@@ -144,6 +144,10 @@ if __name__ == '__main__':
     robot_data = data_load(data_path)
 
     final_stations, final_allocations, final_counts = run_greedy_construction(robot_data)
+    final_total_cost = calculate_global_expected_cost(final_stations, final_allocations, robot_data)
+
+    print(f"The Total Expected Daily Cost is: £{final_total_cost:,.2f}")
+    print(f"Total Stations Built: {len(final_stations)}")
 
     stations_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
     stations_df.index.name = 'station_id'
