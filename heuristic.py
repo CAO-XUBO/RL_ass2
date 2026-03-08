@@ -6,9 +6,13 @@ from scipy.spatial.distance import cdist
 from Hyperparameter import *
 from cost_calculator import calculate_single_station_cost, calculate_global_expected_cost
 
-def data_load(data_filepath):
+def data_load(data_filepath, target_subset = None, is_subset = False):
     robot_data = pd.read_csv(data_filepath, index_col='index')
-    target_robot_data = robot_data[robot_data['subset'] == "high"]
+
+    if is_subset:
+        target_robot_data = robot_data[robot_data['subset'] == target_subset].copy()
+    else:
+        target_robot_data = robot_data.copy()
     return target_robot_data
 
 def assign_best_available_station(robot_id, station_locations, station_current_counts, robot_data):
@@ -118,7 +122,11 @@ if __name__ == '__main__':
     stations_out_path = f"{out_dir}/stations_1b.csv"
     allocations_out_path = f"{out_dir}/allocations_1b.csv"
 
-    robot_data = data_load(data_path)
+    is_subset = True
+    # "high", "median", "low"
+    target_subset = "median"
+
+    robot_data = data_load(data_path, target_subset, is_subset)
 
     final_stations, final_allocations, final_counts = run_greedy_construction(robot_data)
     final_total_cost = calculate_global_expected_cost(final_stations, final_allocations, robot_data)
