@@ -43,6 +43,7 @@ def run_greedy_construction(robot_data):
     """
     Greedy Website Construction Algorithm
     """
+    # initialise the station locations, current counts and allocations
     station_locations = {}
     station_current_counts = {}
     allocations = {r_id: -1 for r_id in robot_data.index}
@@ -53,12 +54,13 @@ def run_greedy_construction(robot_data):
     print(f"Loaded {len(unassigned_robots)} robot data")
 
     while len(unassigned_robots) > 0:
-
+        # set the initial cost to inf
         best_cost_per_robot = float('inf')
         best_candidate_xy = None
         best_candidate_robots = []
         best_station_cost = 0
 
+        # extract the location and range data of each robots
         unassigned_data = robot_data.loc[unassigned_robots]
         coords = unassigned_data[['longitude', 'latitude']].values
         ranges = unassigned_data['range'].values
@@ -116,24 +118,29 @@ def run_greedy_construction(robot_data):
 
 if __name__ == '__main__':
 
-    data_path = "processed_data/robot_subsets.csv"
+    # Select the dataset here, subset or the entire region
+    data_path = "processed_data/robot_subsets.csv" # Subset
+    # data_path = "processed_data/robot_locations_range.csv"  # The entire region
 
     out_dir = "results"
     stations_out_path = f"{out_dir}/stations_1b.csv"
     allocations_out_path = f"{out_dir}/allocations_1b.csv"
 
+    # If is subset
     is_subset = True
-    # "high", "median", "low"
+    # The target subset: "high", "median", "low"
     target_subset = "median"
 
     robot_data = data_load(data_path, target_subset, is_subset)
 
+    # Run the greedy algorithm and calculate the optimal value
     final_stations, final_allocations, final_counts = run_greedy_construction(robot_data)
     final_total_cost = calculate_global_expected_cost(final_stations, final_allocations, robot_data)
 
     print(f"The Total Expected Daily Cost is: £{final_total_cost:,.2f}")
     print(f"Total Stations Built: {len(final_stations)}")
 
+    # Save the locations of stations and the allocation relationship to csv
     stations_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
     stations_df.index.name = 'station_id'
 
