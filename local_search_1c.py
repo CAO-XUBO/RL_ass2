@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import copy
 from Hyperparameter import *
-from cost_calculator import calculate_global_expected_cost
+from cost_calculator import calculate_global_deterministic_cost
 
 def data_load(data_filepath, target_subset=None, is_subset=False):
     """Load robot data from CSV."""
@@ -21,7 +21,7 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
     """
     print("\n--- Starting Streamlined Local Search ---")
 
-    current_cost = calculate_global_expected_cost(stations_dict, allocations_dict, robot_data)
+    current_cost = calculate_global_deterministic_cost(stations_dict, allocations_dict, robot_data)
     print(f"Initial Cost: £{current_cost:,.2f}")
 
     improved = True
@@ -48,7 +48,7 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
             old_xy = stations_dict[s_id]
             stations_dict[s_id] = (new_x, new_y)
             
-            new_cost = calculate_global_expected_cost(stations_dict, allocations_dict, robot_data)
+            new_cost = calculate_global_deterministic_cost(stations_dict, allocations_dict, robot_data)
             if new_cost < current_cost:
                 current_cost = new_cost
                 improved = True
@@ -87,7 +87,7 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
                         allocations_dict[r1] = s2
                         allocations_dict[r2] = s1
                         
-                        new_cost = calculate_global_expected_cost(stations_dict, allocations_dict, robot_data)
+                        new_cost = calculate_global_deterministic_cost(stations_dict, allocations_dict, robot_data)
                         
                         if new_cost < best_swap_cost:
                             best_swap_cost = new_cost
