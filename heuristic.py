@@ -127,7 +127,7 @@ if __name__ == '__main__':
     allocations_out_path = f"{out_dir}/allocations_1b.csv"
 
     # If is subset
-    is_subset = True
+    is_subset = False
     # The target subset: "high", "median", "low"
     target_subset = "median"
 
