@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from scipy.spatial.distance import cdist
 from Hyperparameter import *
-from cost_calculator import calculate_single_station_cost, calculate_global_expected_cost
+from cost_calculator import calculate_single_station_cost, calculate_global_deterministic_cost
 
 def data_load(data_filepath, target_subset = None, is_subset = False):
     robot_data = pd.read_csv(data_filepath, index_col='index')
@@ -117,27 +117,31 @@ def run_greedy_construction(robot_data):
 
 
 if __name__ == '__main__':
-
-    # Select the dataset here, subset or the entire region
-    data_path = "processed_data/robot_subsets.csv" # Subset
-    # data_path = "processed_data/robot_locations_range.csv"  # The entire region
-
-    out_dir = "results"
-    stations_out_path = f"{out_dir}/stations_1b.csv"
-    allocations_out_path = f"{out_dir}/allocations_1b.csv"
-
     # If is subset
     is_subset = False
     # The target subset: "high", "median", "low"
     target_subset = "median"
 
+    # Select the dataset here, subset or the entire region
+    if is_subset:
+        data_path = "processed_data/robot_subsets.csv" # Subset
+    else:
+        data_path = "processed_data/robot_locations_range.csv"  # The entire region
+
+    out_dir = "results/heuristic_deterministic"
+    stations_out_path = f"{out_dir}/stations_deterministic.csv"
+    allocations_out_path = f"{out_dir}/allocations_deterministic.csv"
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
     robot_data = data_load(data_path, target_subset, is_subset)
 
     # Run the greedy algorithm and calculate the optimal value
     final_stations, final_allocations, final_counts = run_greedy_construction(robot_data)
-    final_total_cost = calculate_global_expected_cost(final_stations, final_allocations, robot_data)
+    final_total_cost = calculate_global_deterministic_cost(final_stations, final_allocations, robot_data)
 
-    print(f"The Total Expected Daily Cost is: £{final_total_cost:,.2f}")
+    print(f"The Total Daily Cost is: £{final_total_cost:,.2f}")
     print(f"Total Stations Built: {len(final_stations)}")
 
     # Save the locations of stations and the allocation relationship to csv

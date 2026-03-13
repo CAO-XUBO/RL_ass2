@@ -19,27 +19,24 @@ def calculate_single_station_cost(distances, max_ranges):
     num_chargers = math.ceil(N_served / CHARGER_ROBOT_LIMIT)
     fixed_hardware_cost = BUILD_COST + num_chargers * MAINTAIN_COST
 
-    # Expected dynamic costs
-    expected_variable_cost = 0.0
+    # Dynamic costs
+    variable_cost = 0.0
 
     for d, r_i in zip(distances, max_ranges):
-        # The probability that the robot requires charging today
-        p_i = math.exp(- (LAMBDA ** 2) * ((r_i - R_MIN) ** 2))
-
-        # Expected charging fee
-        charge_cost_per_time = CHARGE_COST * R_MAX
-        expected_variable_cost += p_i * charge_cost_per_time
-
-        # Expected trailer fee
-        if d > r_i:
-            expected_variable_cost += p_i * RESCUE_COST
+        if d <= r_i:
+            charge_amount = R_MAX - r_i +d
+            variable_cost += CHARGE_COST * charge_amount
+        else:
+            charge_amount = R_MAX - r_i
+            variable_cost += CHARGE_COST * charge_amount
+            variable_cost += RESCUE_COST
 
     # Total expect cost
-    total_expected_cost = fixed_hardware_cost + expected_variable_cost
+    total_deterministic_cost = fixed_hardware_cost + variable_cost
 
-    return total_expected_cost
+    return total_deterministic_cost
 
-def calculate_global_expected_cost(station_locations, allocations, robot_data):
+def calculate_global_deterministic_cost(station_locations, allocations, robot_data):
     """
     Final calculate total cost for the entire settlement area
     """
