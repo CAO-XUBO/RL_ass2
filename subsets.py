@@ -99,17 +99,18 @@ median_density_idx = density_diff.idxmin()
 median_subset_idx, median_subset = get_subset_around_center(median_density_idx, candidates_idx, candidates_coords)
 
 
-# Output results in CSV
+# Output the subsets in CSV
 high_subset["subset"] = "high"
 low_subset["subset"] = "low"
 median_subset["subset"] = "median"
 
-output_cols = ["index", "longitude", "latitude", "range", "subset"]
+#output_cols = ["index", "longitude", "latitude", "range", "subset"]
 all_subsets = pd.concat([high_subset, low_subset, median_subset], ignore_index = True)
-all_subsets[output_cols].to_csv("processed_data/robot_subsets.csv", index = False)
+all_subsets = all_subsets.drop(columns = ["loc_density"])
+all_subsets.to_csv("processed_data/robot_subsets.csv", index = False)
 
 
-# Draw the results in a map
+# Draw the subsets in a map
 fig = plt.figure(figsize = (10, 5))
 ax = fig.add_subplot(1, 1, 1, projection = ccrs.PlateCarree())
 # Small extension to include all points
