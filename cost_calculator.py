@@ -96,7 +96,7 @@ def evaluate_performance(robot_data, final_stations, final_total_cost, execution
         print(f"Optimal Cost   f(X*): £{f_x_star:,.2f}")
         print(f"RPD (Gap)            : {rpd:.2f}%")
     else:
-        print("Optimal Cost   f(X*): Unknown (Too large for exact solver or not recorded)")
+        print("Optimal Cost   f(X*): Unknown")
         print("RPD (Gap)            : N/A")
 
     print(f"Execution Time       : {execution_time:.4f} seconds")
