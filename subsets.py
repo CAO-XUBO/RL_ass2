@@ -7,7 +7,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 # PARAMETERS AVAILABLE TO BE ADJUSTED
-subset_size = 50            # Size of subsets
+subset_size = 40            # Size of subsets
 distance_threshold = 10     # Degree threshold to avoid overlap between subsets
 
 
