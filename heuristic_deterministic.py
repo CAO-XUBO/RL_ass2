@@ -125,11 +125,9 @@ if __name__ == '__main__':
     # Select the dataset here, subset or the entire region
     if is_subset:
         data_path = "processed_data/robot_subsets.csv" # Subset
+        out_dir = f"results/heuristic_deterministic_{target_subset}"
     else:
         data_path = "processed_data/robot_locations_range.csv"  # The entire region
-    if is_subset:
-        out_dir = f"results/heuristic_deterministic_{target_subset}"
-    else:       
         out_dir = "results/heuristic_deterministic_full"
     stations_out_path = f"{out_dir}/stations_deterministic.csv"
     allocations_out_path = f"{out_dir}/allocations_deterministic.csv"
