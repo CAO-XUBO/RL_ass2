@@ -4,7 +4,7 @@ import numpy as np
 from Hyperparameter import *
 subsets_df = pd.read_csv('processed_data/robot_subsets.csv')
 
-densities = ['high', 'low', 'median']
+densities = ['high', 'low','median']
 results = {}
 
 def solve_minlp_for_subset(df_subset, name):
@@ -17,10 +17,10 @@ def solve_minlp_for_subset(df_subset, name):
     I = range(n_robots)
     # Set the number of stations to 8 as per your requirement
     n_stations =  8
-    J = range(n_stations)
 
-    # Calculate the probability of rescue failure for each robot based on its range and the minimum required range
-    p_i = np.exp(-(LAMBDA**2) * (r_i - R_MIN)**2)
+    J = range(n_stations)
+    def dist(i, j):
+        return xp.sqrt((X_j[j] - x_coords[i])**2 + (Y_j[j] - y_coords[i])**2)
     
     # Calculate the big M constant for the distance constraints
     X_min, X_max = x_coords.min(), x_coords.max()
@@ -43,8 +43,8 @@ def solve_minlp_for_subset(df_subset, name):
     # Objective function
     obj = xp.Sum(BUILD_COST * z_j[j] for j in J) + \
           xp.Sum(MAINTAIN_COST * v_j[j] for j in J) + \
-          xp.Sum(p_i[i] * RESCUE_COST * h_ij[i,j] for i in I for j in J) + \
-          xp.Sum(p_i[i] * CHARGE_COST * R_MAX * w_ij[i,j] for i in I for j in J)
+          xp.Sum(RESCUE_COST * h_ij[i,j] for i in I for j in J) + \
+          xp.Sum(CHARGE_COST * ((R_MAX - r_i[i]) * w_ij[i,j] + dist(i,j) * (w_ij[i,j] - h_ij[i,j])) for i in I for j in J)
     
     prob.setObjective(obj, sense=xp.minimize)
 
@@ -52,14 +52,13 @@ def solve_minlp_for_subset(df_subset, name):
     prob.addConstraint(xp.Sum(w_ij[i,j] for j in J) == 1 for i in I) 
     prob.addConstraint(xp.Sum(w_ij[i,j] for i in I) <= CHARGER_ROBOT_LIMIT * v_j[j] for j in J) 
     prob.addConstraint(v_j[j] <= STATION_CHARGER_LIMIT * z_j[j] for j in J) 
+    prob.addConstraint(w_ij[i,j] <= z_j[j] for i in I for j in J)
+    prob.addConstraint(h_ij[i,j] <= w_ij[i,j] for i in I for j in J)
 
     for i in I:
         for j in J:
-            dist = xp.sqrt((X_j[j] - x_coords[i])**2 + (Y_j[j] - y_coords[i])**2) 
-            prob.addConstraint(dist - r_i[i] <= M * h_ij[i,j] + M * (1 - w_ij[i,j])) 
-            prob.addConstraint(h_ij[i,j] <= w_ij[i,j]) 
-
-    prob.controls.timelimit = 300 
+            prob.addConstraint(dist(i,j) - r_i[i] <= M * h_ij[i,j] + M * (1 - w_ij[i,j])) 
+    prob.controls.timelimit = 300
     prob.solve()
     
     return prob, X_j, Y_j, z_j, v_j, x_coords, y_coords
@@ -77,6 +76,7 @@ for density in densities:
         prob, X_j, Y_j, z_j, v_j, rx, ry = solve_minlp_for_subset(df_sub, density)
         
         sol_status = prob.attributes.solstatus
+        theoretical_lower_bound = prob.attributes.bestbound
         
         if sol_status in [xp.SolStatus.FEASIBLE, xp.SolStatus.OPTIMAL]:
             total_cost = prob.attributes.objval
@@ -103,30 +103,36 @@ for density in densities:
             
             summary_results.append({
                 'Scenario': density.capitalize(),
-                'Cost': f"£{total_cost:,.2f}",
+                'Total_Cost': total_cost,
+                'Lower_Bound': theoretical_lower_bound,
                 'Stations': active_stations_count,
-                'Avg_Chargers': f"{avg_v:.1f}"
-            })
+                'Avg_Chargers': avg_v
+                })
         else:
             summary_results.append({
                 'Scenario': density.capitalize(),
-                'Cost': f"Status: {sol_status}",
-                'Stations': "-",
-                'Avg_Chargers': "-"
-            })
+                'Total_Cost': None,
+                'Lower_Bound': theoretical_lower_bound,
+                'Stations': None,
+                'Avg_Chargers': None,
+                'Status': str(sol_status)})
 print("\n" + "="*70)
 print(f"{'1(a) FINAL SUMMARY RESULTS':^70}")
 print("="*70)
 print(f"{'DENSITY SCENARIO':<18} | {'TOTAL COST':<15} | {'STATIONS':<10} | {'AVG CHARGERS':<12}")
 print("-" * 70)
 for res in summary_results:
-    print(f"{res['Scenario']:<18} | {res['Cost']:>15} | {res['Stations']:<10} | {res['Avg_Chargers']:<12}")
+    print(f"{res['Scenario']:<18} | {res['Total_Cost']:>15} | {res['Stations']:<10} | {res['Avg_Chargers']:<12}")
 print("="*70)
 output_dir = "MINLP_results"
 if all_station_data:
     results_df = pd.DataFrame(all_station_data)
     results_df = results_df.sort_values(by=['Density_Type', 'Station_Index'])
     csv_path = os.path.join(output_dir, "MINLP_subset_results_summary.csv")
-    results_df.to_csv(csv_path, index=False)
     print(f"\nStation details saved to: {csv_path}")
+    results_df.to_csv(csv_path, index=False)
+    summary_df = pd.DataFrame(summary_results)
+    summary_csv_path = os.path.join(output_dir, "MINLP_total_cost_summary.csv")
+    summary_df.to_csv(summary_csv_path, index=False)
+    print(f"\nSubset summary saved to: {summary_csv_path}")
 print("="*75)
