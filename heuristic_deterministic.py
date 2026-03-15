@@ -119,7 +119,7 @@ def run_greedy_construction(robot_data):
 if __name__ == '__main__':
     # If is subset
     is_subset = False
-    # The target subset: "high", "median", "low"
+    # The target subset: "high", "median", "low", "mixed"
     target_subset = "median"
 
     # Select the dataset here, subset or the entire region
