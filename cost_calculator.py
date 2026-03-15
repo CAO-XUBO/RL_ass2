@@ -65,3 +65,39 @@ def calculate_global_deterministic_cost(station_locations, allocations, robot_da
         total_system_cost += station_cost
 
     return total_system_cost
+
+def evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, target_subset, is_subset):
+    """
+    Evaluating the performance of heuristic algorithms
+    """
+    total_robots = len(robot_data)
+    total_built_stations = len(final_stations)
+
+    optimal_baselines = {
+        "high": 26396.04,
+        "low": 26512.19,
+        "median": 26460.37,
+    }
+
+    print("\n" + "=" * 60)
+    print(f"{'HEURISTIC PERFORMANCE EVALUATION':^60}")
+    print("=" * 60)
+    print(f"Dataset              : {'Subset - ' + target_subset.capitalize() if is_subset else 'Full Region (1072)'}")
+    print(f"Total Robots Covered : {total_robots}")
+    print(f"Total Stations Built : {total_built_stations}")
+    print("-" * 60)
+
+    f_x_h = final_total_cost
+    print(f"Heuristic Cost f(X^H): £{f_x_h:,.2f}")
+
+    if is_subset and target_subset.lower() in optimal_baselines:
+        f_x_star = optimal_baselines[target_subset.lower()]
+        rpd = ((f_x_h - f_x_star) / f_x_star) * 100
+        print(f"Optimal Cost   f(X*): £{f_x_star:,.2f}")
+        print(f"RPD (Gap)            : {rpd:.2f}%")
+    else:
+        print("Optimal Cost   f(X*): Unknown (Too large for exact solver or not recorded)")
+        print("RPD (Gap)            : N/A")
+
+    print(f"Execution Time       : {execution_time:.4f} seconds")
+    print("=" * 60 + "\n")
