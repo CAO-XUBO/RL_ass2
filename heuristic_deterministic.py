@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # If is subset
     is_subset = True
     # The target subset: "high", "median", "low", "mixed"
-    target_subset = "low"
+    target_subset = "median"
 
     # Select the dataset here, subset or the entire region
     if is_subset:
@@ -142,8 +142,16 @@ if __name__ == '__main__':
     final_total_cost = calculate_global_deterministic_cost(final_stations, final_allocations, robot_data)
     execution_time = time.time() - start_time
 
+    baseline_filepath = "MINLP_results/MINLP_total_cost_summary.csv"
+    baseline_df = pd.read_csv(baseline_filepath)
+
+    optimal_baselines = {}
+    for _, row in baseline_df.iterrows():
+        scenario_name = str(row['Scenario']).lower()
+        optimal_baselines[scenario_name] = row['Total_Cost']
+
     # evaluate the performance
-    evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, target_subset, is_subset)
+    evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, optimal_baselines, target_subset, is_subset)
 
     print(f"The Total Daily Cost is: £{final_total_cost:,.2f}")
     print(f"Total Stations Built: {len(final_stations)}")

@@ -66,18 +66,12 @@ def calculate_global_deterministic_cost(station_locations, allocations, robot_da
 
     return total_system_cost
 
-def evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, target_subset, is_subset):
+def evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, optimal_baselines, target_subset, is_subset):
     """
     Evaluating the performance of heuristic algorithms
     """
     total_robots = len(robot_data)
     total_built_stations = len(final_stations)
-
-    optimal_baselines = {
-        "high": 26396.04,
-        "low": 26512.19,
-        "median": 26460.37,
-    }
 
     print("\n" + "=" * 60)
     print(f"{'HEURISTIC PERFORMANCE EVALUATION':^60}")
@@ -93,7 +87,7 @@ def evaluate_performance(robot_data, final_stations, final_total_cost, execution
     if is_subset and target_subset.lower() in optimal_baselines:
         f_x_star = optimal_baselines[target_subset.lower()]
         rpd = ((f_x_h - f_x_star) / f_x_star) * 100
-        print(f"Optimal Cost   f(X*): £{f_x_star:,.2f}")
+        print(f"Optimal Cost   f(X*):  £{f_x_star:,.2f}")
         print(f"RPD (Gap)            : {rpd:.2f}%")
     else:
         print("Optimal Cost   f(X*): Unknown")
