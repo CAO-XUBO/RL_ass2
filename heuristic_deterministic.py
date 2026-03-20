@@ -142,7 +142,7 @@ if __name__ == '__main__':
     final_total_cost = calculate_global_deterministic_cost(final_stations, final_allocations, robot_data)
     execution_time = time.time() - start_time
 
-    baseline_filepath = "MINLP_results/MINLP_total_cost_summary.csv"
+    baseline_filepath = "results/MINLP_results/MINLP_total_cost_summary.csv"
     baseline_df = pd.read_csv(baseline_filepath)
 
     optimal_baselines = {}
