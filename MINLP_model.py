@@ -124,7 +124,7 @@ print("-" * 70)
 for res in summary_results:
     print(f"{res['Scenario']:<18} | {res['Total_Cost']:>15} | {res['Stations']:<10} | {res['Avg_Chargers']:<12}")
 print("="*70)
-output_dir = "MINLP_results"
+output_dir = "results/MINLP_results"
 if all_station_data:
     results_df = pd.DataFrame(all_station_data)
     results_df = results_df.sort_values(by=['Density_Type', 'Station_Index'])
