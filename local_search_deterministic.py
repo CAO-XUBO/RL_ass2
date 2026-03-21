@@ -130,13 +130,10 @@ if __name__ == '__main__':
 
     final_stations, final_allocations = run_local_search(robot_data, stations_dict, allocations_dict)
 
-    stations_out_path = "results/local_search_deterministic/stations_local_search.csv"
-    allocations_out_path = "results/local_search_deterministic/allocations_local_search.csv"
+    out_dir = "results/local_search_deterministic"
 
-    if not os.path.exists(stations_out_path):
-        os.makedirs(stations_out_path)
-    if not os.path.exists(allocations_out_path):
-        os.makedirs(allocations_out_path)
+    stations_out_path = f"{out_dir}/stations_local_search.csv"
+    allocations_out_path = f"{out_dir}/allocations_local_search.csv"
 
     stations_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
     stations_df.index.name = 'station_id'
