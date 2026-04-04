@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import pandas as pd
-import copy
 from Hyperparameter import *
 from cost_calculator import calculate_global_deterministic_cost
 
@@ -16,13 +15,11 @@ def data_load(data_filepath, target_subset=None, is_subset=False):
 
 def run_local_search(robot_data, stations_dict, allocations_dict):
     """
-    Streamlined Local Search Heuristic for Zero-Spare-Capacity Scenario.
-    Operators: Relocate (Op 1) and Penalty-Guided Swap (Op 4).
+    Local Search Heuristic using Alternating Location-Allocation.
+    Operators: Relocate (continuous) and Penalty-Guided Swap (discrete).
     """
-    print("\n--- Starting Streamlined Local Search ---")
-
     current_cost = calculate_global_deterministic_cost(stations_dict, allocations_dict, robot_data)
-    print(f"Initial Cost: £{current_cost:,.2f}")
+    print(f"Initial Cost: GBP {current_cost:,.2f}")
 
     improved = True
     iteration = 0
@@ -30,12 +27,8 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
     while improved:
         improved = False
         iteration += 1
-        print(f"\nIteration {iteration}...")
 
-        # ==========================================
-        # Operator 1: Relocate stations to the center of gravity
-        # This is CRUCIAL to adjust coordinates after a successful Swap.
-        # ==========================================
+        # Operator 1: Relocate stations to cluster centroid
         for s_id in list(stations_dict.keys()):
             assigned_robots = [r for r, s in allocations_dict.items() if s == s_id]
             if not assigned_robots:
@@ -52,17 +45,12 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
             if new_cost < current_cost:
                 current_cost = new_cost
                 improved = True
-                print(f"  [Relocate] Station {s_id} moved to new centroid. New cost: £{current_cost:,.2f}")
+                print(f"  [Iter {iteration}] Relocate: Station {s_id} shifted. New cost: GBP {current_cost:,.2f}")
             else:
                 stations_dict[s_id] = old_xy
 
-        # ==========================================
-        # Operator 4: Penalty-guided best-improvement swap
-        # Breaks the capacity deadlock by swapping high-penalty robots.
-        # ==========================================
+        # Operator 2: Penalty-guided best-improvement swap
         if not improved:
-            print("  [Swap] Exploring penalty-guided 1-to-1 swaps...")
-            
             pain_robots = []
             for r_id in robot_data.index:
                 s_id = allocations_dict[r_id]
@@ -106,44 +94,69 @@ def run_local_search(robot_data, stations_dict, allocations_dict):
                     
                     current_cost = best_swap_cost
                     improved = True
-                    print(f"  [Swap] Swapped robots {r1} and {r2}. New cost: £{current_cost:,.2f}")
+                    print(f"  [Iter {iteration}] Swap: Robots {r1} & {r2} exchanged. New cost: GBP {current_cost:,.2f}")
 
-    print(f"\nLocal search converged after {iteration} iterations.")
-    print(f"Final Objective Cost: £{current_cost:,.2f}")
-    print("--- End of Local Search ---\n")
+    print(f"Local search converged after {iteration} iterations.")
+    print(f"Final Objective Cost: GBP {current_cost:,.2f}")
     
     return stations_dict, allocations_dict
 
 
 if __name__ == '__main__':
-    data_path = "processed_data/robot_locations_range.csv"
-    
-    print("Loading 1(b) initial solution...")
-    robot_data = data_load(data_path, is_subset=False)
-    stations_1b_df = pd.read_csv("results/stations_1b.csv", index_col='station_id')
-    allocations_1b_df = pd.read_csv("results/allocations_1b.csv", index_col='robot_id')
+    scenarios = [
+        {"is_subset": True,  "target_subset": "low"},
+        {"is_subset": True,  "target_subset": "median"},
+        {"is_subset": True,  "target_subset": "high"},
+        {"is_subset": False, "target_subset": "full"}
+    ]
 
-    stations_dict = {str(idx): (row['longitude'], row['latitude']) for idx, row in stations_1b_df.iterrows()}
-    allocations_dict = {idx: str(row['station_id']) for idx, row in allocations_1b_df.iterrows()}
+    for scenario in scenarios:
+        is_subset = scenario["is_subset"]
+        target_subset = scenario["target_subset"]
 
-    final_stations, final_allocations = run_local_search(robot_data, stations_dict, allocations_dict)
+        scenario_name = f"SUBSET: {target_subset.upper()}" if is_subset else "FULL DATASET"
+        print(f"\n--- Processing Scenario: {scenario_name} ---")
 
-    stations_out_path = "results/stations_1c.csv"
-    allocations_out_path = "results/allocations_1c.csv"
+        if is_subset:
+            data_path = "processed_data/robot_subsets.csv"
+            out_dir = f"results/heuristic_deterministic_{target_subset}"
+        else:
+            data_path = "processed_data/robot_locations_range.csv" 
+            out_dir = "results/heuristic_deterministic_full"
 
-    stations_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
-    stations_df.index.name = 'station_id'
-    
-    final_counts = {s: 0 for s in final_stations.keys()}
-    for r, s in final_allocations.items():
-        if s in final_counts:
-            final_counts[s] += 1
-            
-    stations_df['robot_count'] = pd.Series(final_counts)
-    stations_df.to_csv(stations_out_path)
+        stations_in_path = f"{out_dir}/stations_deterministic.csv"
+        allocations_in_path = f"{out_dir}/allocations_deterministic.csv"
 
-    allocations_df = pd.DataFrame.from_dict(final_allocations, orient='index', columns=['station_id'])
-    allocations_df.index.name = 'robot_id'
-    allocations_df.to_csv(allocations_out_path)
-    
-    print(f"Results successfully saved to {stations_out_path} and {allocations_out_path}")
+        print(f"Loading initial solution from {out_dir}...")
+        try:
+            robot_data = data_load(data_path, target_subset, is_subset)
+            stations_df = pd.read_csv(stations_in_path, index_col='station_id')
+            allocations_df = pd.read_csv(allocations_in_path, index_col='robot_id')
+        except FileNotFoundError:
+            print(f"Files not found in {out_dir}. Skipping scenario.")
+            continue
+
+        stations_dict = {str(idx): (row['longitude'], row['latitude']) for idx, row in stations_df.iterrows()}
+        allocations_dict = {idx: str(row['station_id']) for idx, row in allocations_df.iterrows()}
+
+        final_stations, final_allocations = run_local_search(robot_data, stations_dict, allocations_dict)
+
+        stations_out_path = f"{out_dir}/stations_local_search.csv"
+        allocations_out_path = f"{out_dir}/allocations_local_search.csv"
+
+        stations_out_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
+        stations_out_df.index.name = 'station_id'
+        
+        final_counts = {s: 0 for s in final_stations.keys()}
+        for r, s in final_allocations.items():
+            if s in final_counts:
+                final_counts[s] += 1
+                
+        stations_out_df['robot_count'] = pd.Series(final_counts)
+        stations_out_df.to_csv(stations_out_path)
+
+        allocations_out_df = pd.DataFrame.from_dict(final_allocations, orient='index', columns=['station_id'])
+        allocations_out_df.index.name = 'robot_id'
+        allocations_out_df.to_csv(allocations_out_path)
+        
+        print(f"Saved optimized results to {out_dir}")
