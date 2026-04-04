@@ -121,22 +121,26 @@ if __name__ == '__main__':
 
         if is_subset:
             data_path = "processed_data/robot_subsets.csv"
-            out_dir = f"results/heuristic_deterministic_{target_subset}"
+            out_dir = f"results/local_search_deterministic/local_search_deterministic_{target_subset}"
+            initial_solution_dir = f"results/heuristic_deterministic/heuristic_deterministic_{target_subset}"
         else:
             data_path = "processed_data/robot_locations_range.csv" 
-            out_dir = "results/heuristic_deterministic_full"
+            out_dir = "results/local_search_deterministic/local_search_deterministic_full"
+            initial_solution_dir = f"results/heuristic_deterministic/heuristic_deterministic_full"
 
-        stations_in_path = f"{out_dir}/stations_deterministic.csv"
-        allocations_in_path = f"{out_dir}/allocations_deterministic.csv"
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
 
-        print(f"Loading initial solution from {out_dir}...")
-        try:
-            robot_data = data_load(data_path, target_subset, is_subset)
-            stations_df = pd.read_csv(stations_in_path, index_col='station_id')
-            allocations_df = pd.read_csv(allocations_in_path, index_col='robot_id')
-        except FileNotFoundError:
-            print(f"Files not found in {out_dir}. Skipping scenario.")
+        stations_in_path = f"{initial_solution_dir}/stations_deterministic.csv"
+        allocations_in_path = f"{initial_solution_dir}/allocations_deterministic.csv"
+
+        if not os.path.exists(stations_in_path):
+            print(f"Cannot find the initial solution in {stations_in_path}，Please run the heuristic_deterministic.py first")
             continue
+
+        robot_data = data_load(data_path, target_subset, is_subset)
+        stations_df = pd.read_csv(stations_in_path, index_col='station_id')
+        allocations_df = pd.read_csv(allocations_in_path, index_col='robot_id')
 
         stations_dict = {str(idx): (row['longitude'], row['latitude']) for idx, row in stations_df.iterrows()}
         allocations_dict = {idx: str(row['station_id']) for idx, row in allocations_df.iterrows()}
