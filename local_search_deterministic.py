@@ -2,7 +2,6 @@ import math
 import os
 import numpy as np
 import pandas as pd
-import copy
 from Hyperparameter import *
 from cost_calculator import calculate_global_deterministic_cost
 
