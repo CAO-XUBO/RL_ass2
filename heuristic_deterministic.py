@@ -2,9 +2,10 @@ import math
 import numpy as np
 import pandas as pd
 import os
+import time
 from scipy.spatial.distance import cdist
 from Hyperparameter import *
-from cost_calculator import calculate_single_station_cost, calculate_global_deterministic_cost
+from cost_calculator import calculate_single_station_cost, calculate_global_deterministic_cost, evaluate_performance
 
 def data_load(data_filepath, target_subset = None, is_subset = False):
     robot_data = pd.read_csv(data_filepath, index_col='index')
@@ -115,22 +116,19 @@ def run_greedy_construction(robot_data):
 
     return station_locations, allocations, station_current_counts
 
-
 if __name__ == '__main__':
     # If is subset
-    is_subset = False
+    is_subset = True
     # The target subset: "high", "median", "low", "mixed"
-    target_subset = "high"
+    target_subset = "median"
 
     # Select the dataset here, subset or the entire region
     if is_subset:
         data_path = "processed_data/robot_subsets.csv" # Subset
+        out_dir = f"results/heuristic_deterministic/heuristic_deterministic_{target_subset}"
     else:
         data_path = "processed_data/robot_locations_range.csv"  # The entire region
-    if is_subset:
-        out_dir = f"results/heuristic_deterministic_{target_subset}"
-    else:       
-        out_dir = "results/heuristic_deterministic_full"
+        out_dir = "results/heuristic_deterministic/heuristic_deterministic_full"
     stations_out_path = f"{out_dir}/stations_deterministic.csv"
     allocations_out_path = f"{out_dir}/allocations_deterministic.csv"
 
@@ -139,9 +137,21 @@ if __name__ == '__main__':
 
     robot_data = data_load(data_path, target_subset, is_subset)
 
-    # Run the greedy algorithm and calculate the optimal value
+    start_time = time.time()
     final_stations, final_allocations, final_counts = run_greedy_construction(robot_data)
     final_total_cost = calculate_global_deterministic_cost(final_stations, final_allocations, robot_data)
+    execution_time = time.time() - start_time
+
+    baseline_filepath = "results/MINLP_results/MINLP_total_cost_summary.csv"
+    baseline_df = pd.read_csv(baseline_filepath)
+
+    optimal_baselines = {}
+    for _, row in baseline_df.iterrows():
+        scenario_name = str(row['Scenario']).lower()
+        optimal_baselines[scenario_name] = row['Total_Cost']
+
+    # evaluate the performance
+    evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, optimal_baselines, target_subset, is_subset)
 
     print(f"The Total Daily Cost is: £{final_total_cost:,.2f}")
     print(f"Total Stations Built: {len(final_stations)}")
