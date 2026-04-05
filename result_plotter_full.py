@@ -140,7 +140,6 @@ def plot_results(stations_df, robot_df, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi = 150, bbox_inches = "tight")
     plt.close(fig)
-    print(f"Saved figure to: {output_path}")
 
 
 def generate_maps_for_folder(results_folder):
@@ -161,7 +160,7 @@ def generate_maps_for_folder(results_folder):
             continue
 
         stations_df, robot_df = data_preprocess(station_file, alloc_file)
-        output_file = results_path / f"{method_name}_map.png"
+        output_file = results_path / f"{method_name}_full_map.png"
         plot_results(stations_df, robot_df, output_file)
 
 
