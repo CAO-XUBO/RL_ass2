@@ -109,7 +109,7 @@ def run_greedy_construction(robot_data):
 
             station_current_counts[station_id] = len(best_candidate_robots)
             print(f"Build {station_id}: Loc({best_candidate_xy[0]:.2f}, {best_candidate_xy[1]:.2f}), "
-                  f"Capacity {len(best_candidate_robots)}/16, Expected Cost £{best_station_cost:.2f}")
+                  f"Capacity {len(best_candidate_robots)}/16, Expected Cost GBP{best_station_cost:.2f}")
             station_counter += 1
         else:
             break
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # evaluate the performance
     evaluate_performance(robot_data, final_stations, final_total_cost, execution_time, optimal_baselines, target_subset, is_subset)
 
-    print(f"The Total Daily Cost is: £{final_total_cost:,.2f}")
+    print(f"The Total Daily Cost is: GBP{final_total_cost:,.2f}")
     print(f"Total Stations Built: {len(final_stations)}")
 
     # Save the locations of stations and the allocation relationship to csv

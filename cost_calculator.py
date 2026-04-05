@@ -82,12 +82,12 @@ def evaluate_performance(robot_data, final_stations, final_total_cost, execution
     print("-" * 60)
 
     f_x_h = final_total_cost
-    print(f"Heuristic Cost f(X^H): £{f_x_h:,.2f}")
+    print(f"Heuristic Cost f(X^H): GBP{f_x_h:,.2f}")
 
     if is_subset and target_subset.lower() in optimal_baselines:
         f_x_star = optimal_baselines[target_subset.lower()]
         rpd = ((f_x_h - f_x_star) / f_x_star) * 100
-        print(f"Optimal Cost   f(X*):  £{f_x_star:,.2f}")
+        print(f"Optimal Cost   f(X*):  GBP{f_x_star:,.2f}")
         print(f"RPD (Gap)            : {rpd:.2f}%")
     else:
         print("Optimal Cost   f(X*): Unknown")

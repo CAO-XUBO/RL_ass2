@@ -25,7 +25,7 @@ plt.plot(lambdas, optimized_costs, marker='s', linestyle='-', color='#1d3557', l
 
 # Annotate cost savings
 for i in range(len(lambdas)):
-    plt.annotate(f"Saved\n£{saved_costs[i]:,.0f}", 
+    plt.annotate(f"Saved\nGBP{saved_costs[i]:,.0f}", 
                  (lambdas[i], optimized_costs[i]), 
                  textcoords="offset points", 
                  xytext=(0, 15), 
@@ -33,7 +33,7 @@ for i in range(len(lambdas)):
 
 plt.title(r'Expected Cost vs. Weather Severity ($\lambda$)', fontsize=13, fontweight='bold')
 plt.xlabel(r'Weather Severity Parameter ($\lambda$)', fontsize=11, fontweight='bold')
-plt.ylabel('Expected Total Cost (£)', fontsize=11, fontweight='bold')
+plt.ylabel('Expected Total Cost (GBP)', fontsize=11, fontweight='bold')
 plt.xticks(lambdas, [f"{l:.3f}" for l in lambdas]) 
 plt.ylim(200000, 750000)
 plt.grid(True, linestyle=':', alpha=0.7)
