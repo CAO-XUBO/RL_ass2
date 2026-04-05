@@ -165,7 +165,7 @@ if __name__ == '__main__':
     robot_data_path = "processed_data/robot_locations_range.csv" 
     scenarios_path = "origin_data/range_scenarios.csv"
     stations_in_path = "results/local_search_deterministic/local_search_deterministic_full/stations_local_search.csv"
-    out_dir = "results/q2_ultimate_sensitivity"
+    out_dir = "results/q2_sensitivity"
     
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     initial_stations_dict = {str(idx): (row['longitude'], row['latitude']) for idx, row in stations_df.iterrows()}
     
     # Sensitivity Analysis Loop
-    test_lambdas = [0.005, 0.008, 0.012, 0.015, 0.020]
+    test_lambdas = [0.004, 0.008, 0.012, 0.016, 0.020]
     
     baseline_costs = []
     optimized_costs = []
@@ -205,6 +205,61 @@ if __name__ == '__main__':
         saved = base_cost - opt_cost
         saved_moneys.append(saved)
         print(f"\nTotal Cost Saved by Stochastic Model (Model II): GBP {saved:,.2f}")
+
+        # 4. Save final station locations and typical allocations for this lambda
+        stations_out_df = pd.DataFrame.from_dict(final_stations, orient='index', columns=['longitude', 'latitude'])
+        stations_out_df.index.name = 'station_id'
+        stations_out_csv = f"{out_dir}/stations_lambda_{l_val}.csv"
+        stations_out_df.to_csv(stations_out_csv)
+        print(f"  --> Saved Stations to {stations_out_csv}")
+
+        # Generate typical allocations for this lambda
+        avg_ranges = scenarios_df.mean(axis=1) 
+        robot_coords = {r_id: (row['longitude'], row['latitude']) for r_id, row in robot_data.iterrows()}
+        station_capacities = {s_id: CAPACITY_LIMIT for s_id in final_stations.keys()}
+        
+        robots_typical = []
+        for r_id in robot_data.index:
+            r_avg = avg_ranges[r_id]
+            p_fail = math.exp(- (l_val**2) * ((r_avg - R_MIN)**2))
+            robots_typical.append({'id': r_id, 'range': r_avg, 'prob': p_fail})
+            
+        robots_typical.sort(key=lambda x: x['prob'], reverse=True)
+        
+        typical_allocations = {}
+        for rob in robots_typical:
+            r_id = rob['id']
+            r_is = rob['range']
+            p_is = rob['prob']
+            rx, ry = robot_coords[r_id]
+            
+            best_station = None
+            min_expected_cost = float('inf')
+            
+            for s_id, (sx, sy) in final_stations.items():
+                if station_capacities[s_id] <= 0:
+                    continue 
+                dist = math.sqrt((rx - sx)**2 + (ry - sy)**2)
+                if dist <= r_is:
+                    cost = p_is * CHARGE_COST * ((R_MAX - r_is) + dist)
+                else:
+                    cost = p_is * (RESCUE_COST + CHARGE_COST * (R_MAX - r_is))
+                    
+                if cost < min_expected_cost:
+                    min_expected_cost = cost
+                    best_station = s_id
+                    
+            if best_station is not None:
+                station_capacities[best_station] -= 1
+                typical_allocations[r_id] = best_station
+            else:
+                typical_allocations[r_id] = "Rescue_Needed"
+                
+        allocations_out_df = pd.DataFrame.from_dict(typical_allocations, orient='index', columns=['station_id'])
+        allocations_out_df.index.name = 'robot_id'
+        alloc_out_csv = f"{out_dir}/allocations_lambda_{l_val}_typical.csv"
+        allocations_out_df.to_csv(alloc_out_csv)
+        print(f"  --> Saved Typical Allocations to {alloc_out_csv}")
 
     # Save results and generate plots
     results_df = pd.DataFrame({
