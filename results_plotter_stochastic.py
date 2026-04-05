@@ -104,9 +104,9 @@ def stochastic_plotter(stochastic_df, scenario_name):
     plt.tight_layout()
     plt.savefig(output_path, dpi = 150, bbox_inches = "tight")
 
-
+# Change file path to plot different scenarios
 if __name__ == "__main__":
-    stochastic_df_dir = "results\\stochastic_full\\stations_lambda_0.008.csv"
+    stochastic_df_dir = "results\\q2_sensitivity\\stations_lambda_0.016.csv"
     stochastic_df = pd.read_csv(stochastic_df_dir)
     scenario_name = Path(stochastic_df_dir).stem
 
