@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 from pathlib import Path
 import cartopy.crs as ccrs
@@ -12,31 +13,47 @@ import matplotlib.colors as mcolors
 all_robots = pd.read_csv("processed_data/robot_locations_range.csv")
 all_robots.rename(columns={'index': 'robot_id'}, inplace=True) # Change column name
 
-# Folder names for the data of 3 subset
-density_folders = {
-	"High": "heuristic_deterministic_high",
-	"Medium": "heuristic_deterministic_median",
-	"Low": "heuristic_deterministic_low",
+# Methods folder
+methods = ["deterministic", "local_search"]
+method_folder = {
+    "deterministic": "heuristic_deterministic",
+    "local_search": "local_search_deterministic",
 }
 
-# Methods
-methods = ["deterministic", "local_search"]
-
-# Load in data
+# Write subsets data in a dictionary
 data = {}
 
-for density, folder in density_folders.items():
-    for method in methods:
-        allocations_dir = Path("results") / folder / f"allocations_{method}.csv"
-        stations_dir = Path("results") / folder / f"stations_{method}.csv"
-        allocations_df = pd.read_csv(allocations_dir)
-        allocations_df = pd.merge(allocations_df, all_robots, on="robot_id", how="left") # Match robot locations
-        stations_df = pd.read_csv(stations_dir)
-        # Assign a unique color to each station
-        np.random.seed(42)
+for method in methods:
+    path = Path("results") / method_folder[method]
+    for subset_folder in path.iterdir():
+        if not subset_folder.is_dir():
+            continue
+        # Extract density from folder name
+        density = subset_folder.name.split("_")[-1].lower()
+        if density == "full":
+            continue  # skip full instance
+        density = density.capitalize()
+
+        allocations_path = subset_folder / f"allocations_{method}.csv"
+        stations_path = subset_folder / f"stations_{method}.csv"
+
+        if not allocations_path.exists() or not stations_path.exists():
+            continue
+
+        allocations_df = pd.read_csv(allocations_path)
+        stations_df = pd.read_csv(stations_path)
+        # Preprocess data
+        # 1) Match robots' location
+        allocations_df = pd.merge(allocations_df, all_robots, on = "robot_id", how = "left")
+        # 2) Assign unique color to each station
+        random.seed(42)
+        # Use station_id-sorted mapping to keep colors stable across subsets and reruns.
+        stations_df = stations_df.sort_values("station_id").reset_index(drop = True)
         colors = distinctipy.get_colors(len(stations_df))
         stations_df["color"] = [mcolors.to_hex(c) for c in colors]
-        data[(density, method)] = (allocations_df, stations_df)
+
+        # Store the processed data
+        data[(method, density)] = (allocations_df, stations_df)
 
 
 def plot_panel(allocations_df, stations_df, density, ax = None, extent = None, show_legend = True, draw_labels = False):
@@ -115,12 +132,12 @@ def plot_panel(allocations_df, stations_df, density, ax = None, extent = None, s
 # Draw 1*3 plot for each method 
 for m in methods:
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), subplot_kw={'projection': ccrs.PlateCarree()})
-    for i, density in enumerate(["High", "Medium", "Low"]):
-        allocations_df, stations_df = data[(density, m)]
+    for i, density in enumerate(["High", "Median", "Low"]):
+        allocations_df, stations_df = data[(m, density)]
         show_legend = True
         draw_labels = True
-        plot_panel(allocations_df, stations_df, density, ax=axes[i], show_legend=show_legend, draw_labels=draw_labels)
-    plt.suptitle(f"Robot Allocations and Station Locations ({m.capitalize()} Method)", fontsize=16)
+        plot_panel(allocations_df, stations_df, density, ax = axes[i], show_legend = show_legend, draw_labels = draw_labels)
+    plt.suptitle(f"Robot Allocations and Station Locations ({m.capitalize()} Method)", fontsize = 18)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(f"Diagrams/{m}_method_subsets.png", dpi = 150, bbox_inches = "tight")
     

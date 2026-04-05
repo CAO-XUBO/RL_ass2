@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 from pathlib import Path
 import cartopy.crs as ccrs
@@ -24,8 +25,8 @@ def data_preprocess(stations_dir, allocations_dir):
     allocations_df = pd.read_csv(allocations_dir)
 
     # Assign a unique color to each station
-    np.random.seed(42)
-    colors = distinctipy.get_colors(len(stations_df), random_seed=42)
+    random.seed(42)
+    colors = distinctipy.get_colors(len(stations_df))
     stations_df["color"] = [mcolors.to_hex(c) for c in colors]
     # Merge robot location data with allocation data
     robot_df = pd.merge(allocations_df, all_robots, on="robot_id", how="left")
@@ -140,34 +141,16 @@ def plot_results(stations_df, robot_df, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi = 150, bbox_inches = "tight")
     plt.close(fig)
-
-
-def generate_maps_for_folder(results_folder):
-    """
-    For each pair of robot allocation and station location data,
-    draw the corresponding map and save it in the same folder.
-    """
-    results_path = Path(results_folder)
-    if not results_path.exists() or not results_path.is_dir():
-        raise FileNotFoundError(f"Invalid result folder: {results_folder}")
-
-    for alloc_file in results_path.glob("allocations_*.csv"):
-        method_name = alloc_file.stem.replace("allocations_", "", 1)
-        station_file = results_path / f"stations_{method_name}.csv"
-
-        if not station_file.exists():
-            print(f"Skip {method_name}: missing {station_file.name}")
-            continue
-
-        stations_df, robot_df = data_preprocess(station_file, alloc_file)
-        output_file = results_path / f"{method_name}_full_map.png"
-        plot_results(stations_df, robot_df, output_file)
-
-
+    
+    
 if __name__ == "__main__":
-    target_folder = r"results\\heuristic_deterministic_full"
-    generate_maps_for_folder(target_folder)
+    method = "local_search"
+    allocations_dir = "results\\local_search_deterministic\\local_search_deterministic_full\\allocations_local_search.csv"
+    stations_dir = "results\\local_search_deterministic\\local_search_deterministic_full\\stations_local_search.csv"
+    output_path = f"Diagrams\\{method}_full.png"
 
+    stations_df, robot_df = data_preprocess(stations_dir, allocations_dir)
+    plot_results(stations_df, robot_df, output_path)
 
 
 
