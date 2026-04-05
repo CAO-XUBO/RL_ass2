@@ -1,16 +1,21 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 import os
 
-# Set output directory
+# Set paths
+data_path = "results/q2_ultimate_sensitivity/ultimate_sensitivity_results.csv"
 out_dir = "results/q2_ultimate_sensitivity"
 os.makedirs(out_dir, exist_ok=True)
 
-# Input data
-lambdas = [0.005, 0.008, 0.012, 0.015, 0.020]
-baseline_costs = [645077.52, 639307.50, 631369.84, 626260.34, 619838.24]
-optimized_costs = [644932.35, 617892.50, 510135.61, 420683.59, 300715.30]
-saved_costs = [145.16, 21415.01, 121234.23, 205576.75, 319122.94]
-final_stations = [67, 57, 40, 32, 22]
+# Load results from CSV
+df = pd.read_csv(data_path)
+
+# Extract data columns
+lambdas = df['Lambda'].tolist()
+baseline_costs = df['Baseline_Cost'].tolist()
+optimized_costs = df['Optimized_Cost'].tolist()
+saved_costs = df['Cost_Saved'].tolist()
+final_stations = df['Final_Stations'].tolist()
 
 # Plot 1: Cost Comparison Line Chart
 plt.figure(figsize=(10, 5))
@@ -39,7 +44,7 @@ plt.tight_layout()
 cost_filename = f'{out_dir}/plot_cost_sensitivity.png'
 plt.savefig(cost_filename, dpi=300, bbox_inches='tight')
 plt.close() 
-print(f"Plot 1 successfully generated: {cost_filename}")
+print(f"Plot 1 generated from CSV: {cost_filename}")
 
 # Plot 2: Infrastructure Sizing Bar Chart
 plt.figure(figsize=(10, 5))
@@ -65,4 +70,4 @@ plt.tight_layout()
 stations_filename = f'{out_dir}/plot_stations_sensitivity.png'
 plt.savefig(stations_filename, dpi=300, bbox_inches='tight')
 plt.close()
-print(f"Plot 2 successfully generated: {stations_filename}")
+print(f"Plot 2 generated from CSV: {stations_filename}")

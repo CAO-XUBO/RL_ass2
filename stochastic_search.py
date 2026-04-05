@@ -164,7 +164,7 @@ if __name__ == '__main__':
     # Configuration and file paths
     robot_data_path = "processed_data/robot_locations_range.csv" 
     scenarios_path = "origin_data/range_scenarios.csv"
-    stations_in_path = "results/heuristic_deterministic_full/stations_local_search.csv"
+    stations_in_path = "results/local_search_deterministic/local_search_deterministic_full/stations_local_search.csv"
     out_dir = "results/q2_ultimate_sensitivity"
     
     if not os.path.exists(out_dir):
