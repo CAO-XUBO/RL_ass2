@@ -33,7 +33,7 @@ robots["loc_density"] = loc_density
 
 def get_subset_around_center(center_idx, candidates_idx, candidates_coords):
     """
-    Find the 50 nearest neighbors of the center point.
+    Find the (subset_size) nearest neighbors of the center point.
     """
     # Fit NearestNeighbors
     knn = NearestNeighbors(n_neighbors = subset_size, metric = "euclidean")
