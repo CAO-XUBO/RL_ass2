@@ -165,7 +165,7 @@ if __name__ == '__main__':
     robot_data_path = "processed_data/robot_locations_range.csv" 
     scenarios_path = "origin_data/range_scenarios.csv"
     stations_in_path = "results/local_search_deterministic/local_search_deterministic_full/stations_local_search.csv"
-    out_dir = "results/q2_sensitivity"
+    out_dir = "results/stochastic_sensitivity"
     
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
